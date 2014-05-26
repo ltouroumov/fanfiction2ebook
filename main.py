@@ -59,15 +59,19 @@ def extract_header(fic_body):
                 fic_info[key] = val[0]
 
     chapter_titles = {}
-    chapter_titles_select = fic_body.find('select', id='chap_select')
-    if chapter_titles_select is None:
-        raise RuntimeError("Failed to find <select id=chap_select>")
+    if 'Chapters' in fic_info:
+      chapter_titles_select = fic_body.find('select', id='chap_select')
+      if chapter_titles_select is None:
+          raise RuntimeError("Failed to find <select id=chap_select>")
 
-    all_titles = chapter_titles_select.find_all('option')
-    for item in all_titles:
-        *_, name = item.text.split('.', 1)
-        chapter_titles[int(item['value'])] = name
-
+      all_titles = chapter_titles_select.find_all('option')
+      for item in all_titles:
+          *_, name = item.text.split('.', 1)
+          chapter_titles[int(item['value'])] = name
+    else:
+      fic_info['Chapters'] = '1'
+      chapter_titles[1] = fic_info['title']
+    
     fic_info['chapter_titles'] = chapter_titles
     return fic_info
 
@@ -197,7 +201,7 @@ def package_fanfic(fanfic_link):
         nav_page = epub.EpubNav(uid='book_toc', file_name='toc.xhtml')
         nav_page.add_item(doc_style)
         ebook.add_item(nav_page)
-        ebook.spine = [nav_page, intro_ch] + chapters
+        ebook.spine = [intro_ch, nav_page] + chapters
 
         filename = '%s-%s.epub' % (fic_slug, fic_id)
         out.print("Saving to %s" % filename)
@@ -224,7 +228,10 @@ class OutStream:
         self.name = name
 
     def print(self, str):
-        print("[%s] %s" % (self.name, str))
+        try:
+            print("[%s] %s" % (self.name, str))
+        except:
+            print("[%s] PC LOAD LETTER" % self.name)
 
 
 if len(sys.argv) < 2:
